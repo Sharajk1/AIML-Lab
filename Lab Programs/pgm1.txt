@@ -1,0 +1,49 @@
+def aStarAlgo(start_node, stop_node):
+    open_set, closed_set = {start_node}, set()
+    g, parents = {start_node: 0}, {start_node: start_node}
+
+    while open_set:
+        n = min(open_set, key=lambda x: g[x] + heuristic(x))
+        if n == stop_node:
+            path = [n]
+            while n != start_node:
+                n = parents[n]
+                path.append(n)
+            path.reverse()
+            print('Path found:', path)
+            return path
+
+        if Graph_nodes[n] is not None:
+            for m, weight in get_neighbors(n) or []:
+                tentative_g = g[n] + weight
+                if m not in g or tentative_g < g[m]:
+                    g[m] = tentative_g
+                    parents[m] = n
+                    open_set.add(m)
+
+        open_set.remove(n)
+        closed_set.add(n)
+
+    print('Path does not exist!')
+    return None
+
+# Rest of the code remains unchanged
+def get_neighbors(v):
+    return Graph_nodes.get(v)
+
+
+
+def heuristic(n):
+    H_dist = {'S': 8, 'A': 8, 'B': 4, 'C': 3, 'D': 1000, 'E': 1000, 'G': 0}
+    return H_dist[n]
+
+Graph_nodes = {
+    'S': [['A', 1], ['B', 5], ['C', 8]],
+    'A': [['D', 3], ['E', 7], ['G', 9]],
+    'B': [['G', 4]],
+    'C': [['G', 5]],
+    'D': None,
+    'E': None
+}
+
+aStarAlgo('S', 'G')
