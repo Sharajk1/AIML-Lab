@@ -1,51 +1,47 @@
-import numpy as np
-import pandas as pd
-from scipy.stats import entropy
-from pprint import pprint
+import pandas as pd 
+import math 
+def entropy(data): 
+    value_counts = data.value_counts() 
+    probabilities = value_counts / len(data) 
+    entropy_value = -sum(p * math.log2(p) for p in probabilities) 
+    return entropy_value 
+ 
+def information_gain(data, feature, target): 
+     return entropy(data[target]) - sum( 
+ len(subset) / len(data) * entropy(subset[target]) for _, subset in data.groupby(feature) 
+ ) 
+ 
 
-dataset = pd.read_csv("datasetID3.csv").iloc[:]
-features = dataset.columns[:-1].tolist()
-target = 'PlayTennis'
+def construct_tree(data, target, features): 
+     if len(set(data[target])) == 1: 
+             return data[target].iloc[0] 
+     if not features: 
+         return data[target].mode().iloc[0] 
+     best_feature = max(features, key=lambda f: information_gain(data, f, target)) 
+     tree = {best_feature: {}} 
+     for value, subset in data.groupby(best_feature): 
+         subset = subset.drop(columns=[best_feature]) 
+         tree[best_feature][value] = construct_tree(subset, target, features - {best_feature}) 
+     return tree 
 
-def get_weighted_entropy(data, feature):
-    uf = data[target].value_counts(normalize = True)
-    weighted_entropy = 0
-    for i in range(len(uf)):
-        table = data.where(data[feature] == uf.index[i]).dropna()
-        table_entropy = entropy(table[target].value_counts())
+def print_tree(tree, indent=""): 
+     if isinstance(tree, dict): 
+        for key, value in tree.items(): 
+                print(indent + key) 
+                print_tree(value, indent + " ") 
+     else: 
+        print(indent + f"=> {tree}") 
 
-        weighted_entropy += uf.values[i] * table_entropy
-    return weighted_entropy
+def main(): 
+         # Load dataset from playtennis.csv 
+    df = pd.read_csv("DatasetID3.csv") 
+         # Extract target and features 
+    target_column = "PlayTennis" 
+    features = set(df.columns) - {target_column} 
+         # Construct the decision tree 
+    tree = construct_tree(df, target=target_column, features=features) 
+         # Print the decision tree 
+    print_tree(tree) 
 
-def ID3(data, features, most_freq_target_value):
-    
-    utv = data[target].value_counts()  
-    
-    if len(utv) <= 1: return utv.index[0]
-    elif len(data) == 0: return d_mftv
-    elif len(features) == 0: return most_freq_target_value
-    
-    else:
-
-        #calculate information gain
-        ig = []
-        for feature in features:
-            total_entropy = entropy(data[feature].value_counts())
-            weighted_entropy = get_weighted_entropy(data, feature)
-            ig.append(total_entropy - weighted_entropy)
-        
-        #create tree
-        best_feature = features[np.argmax(ig)]
-        tree = {best_feature:{}}
-        features.remove(best_feature)
-        
-        #create sub_features_table_and_sub_tree
-        sub_features = np.unique(data[best_feature])
-        for sf in sub_features:
-            sub_table = data.where(data[best_feature] == sf).dropna()
-            sub_tree = ID3(sub_table, features, utv.index[0])
-            tree[best_feature][sf] = sub_tree
-            
-        return tree
-d_mftv = dataset[target].value_counts().index[0]
-pprint(ID3(dataset, features, d_mftv))
+if __name__ == "__main__": 
+     main() 
